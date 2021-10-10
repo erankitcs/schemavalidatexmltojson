@@ -3,7 +3,7 @@ Transform: AWS::Serverless-2016-10-31
 Description: >
   schemavalidatexmltojson
 
-  Sample SAM Template for schemavalidatexmltojson
+  SAM Template for schemavalidatexmltojson project.
 
 # More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
 Globals:
@@ -11,31 +11,54 @@ Globals:
     Timeout: 3
 
 Resources:
-  HelloWorldFunction:
+  RequestsTable:
+    Type: AWS::DynamoDB::Table
+    Properties: 
+      AttributeDefinitions: 
+        - AttributeName: id
+          AttributeType: S
+      KeySchema: 
+        - AttributeName: id
+          KeyType: HASH
+      ProvisionedThroughput: 
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+  PayloadBucket:
+    Type: AWS::S3::Bucket
+  GetXmlFunction:
     Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
     Properties:
-      CodeUri: hello_world/
+      CodeUri: get_xml/
       Handler: app.lambda_handler
       Runtime: python3.9
       Architectures:
         - x86_64
+      Environment:
+        Variables:
+          PAYLOAD_BUCKET: !Ref PayloadBucket
+          DYNAMODB_TABLE: !Ref RequestsTable
+          EVENTBRIDGE: !Ref EventBus
+          REGION: "us-east-1"
       Events:
-        HelloWorld:
+        GetXml:
           Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
           Properties:
-            Path: /hello
-            Method: get
-
+            Path: /xml
+            Method: post
+  EventBus:
+    Type: AWS::Events::EventBus
+    Properties: 
+      Name: "schemavalidator_bus"
 Outputs:
   # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
   # Find out more about other implicit resources you can reference within SAM
   # https://github.com/awslabs/serverless-application-model/blob/master/docs/internals/generated_resources.rst#api
-  HelloWorldApi:
-    Description: "API Gateway endpoint URL for Prod stage for Hello World function"
-    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/hello/"
-  HelloWorldFunction:
-    Description: "Hello World Lambda Function ARN"
-    Value: !GetAtt HelloWorldFunction.Arn
-  HelloWorldFunctionIamRole:
-    Description: "Implicit IAM Role created for Hello World function"
-    Value: !GetAtt HelloWorldFunctionRole.Arn
+  GetXmlApi:
+    Description: "API Gateway endpoint URL for Prod stage for GetXml function"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/xml/"
+  GetXmlFunction:
+    Description: "Get XML Lambda Function ARN"
+    Value: !GetAtt GetXmlFunction.Arn
+  GetXmlFunctionIamRole:
+    Description: "Implicit IAM Role created for Get XML function"
+    Value: !GetAtt GetXmlFunction.Arn
