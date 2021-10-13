@@ -19,7 +19,8 @@ def upload_payload(payload,objkey):
     
     """
     bucket = s3.Bucket(PAYLOAD_BUCKET)
-    response = bucket.put_object(payload)
+    response = bucket.put_object(Body=payload,Key=objkey)
+    print(response)
     return True
 
 def lambda_handler(event, context):
@@ -41,30 +42,31 @@ def lambda_handler(event, context):
         Return doc: https://docs.aws.amazon.com/apigateway/latest/developerguide/set-up-lambda-proxy-integrations.html
     """
     print(event)
-
-    body     = event["body"]
-    client   = event["body"]["metadata"]["client"]
-    payload  = event["body"]["data"]
+    body = json.loads(event["body"])
+    client   = body["metadata"]["client"]
+    payload  = body["data"]
     uniqueid = str(uuid.uuid4())
     reference_id = uniqueid+"-"+client
     print("checking payload size coming from the request.")
     payload_size = sys.getsizeof(payload)/1024
     if payload_size > 250 :
-        print("Payload is too large for Eventbridge. Payload size-  %s", payload_size)
+        print("Payload is too large for Eventbridge. Payload size- ", payload_size)
         upload_payload(payload,reference_id)
         body["data"] = ""
     else:
-        print("Good to go for eventbridge directly. Payload size-  %s", payload_size)
+        print("Good to go for eventbridge directly. Payload size- ", payload_size)
     
     print("Calling Event Bridge with request payload.")
+    ### Adding Reference into payload.
+    body["reference_id"]=reference_id
     Entries=[
         {
-            'Time': datetime.now,
-            'Source': 'get_xml_lambda',
+            'Time': datetime.now(),
+            'Source': 'custom.get_xml_lambda',
             'Resources': [
                 'string',
             ],
-            'DetailType': 'Message',
+            'DetailType': 'xmldata',
             'Detail': json.dumps(
                 body
             ),
@@ -72,6 +74,11 @@ def lambda_handler(event, context):
             'TraceHeader': reference_id
         },
     ]
+    print(Entries)
+    response = events_client.put_events(
+    Entries=Entries
+     )
+    print(response)
     return {
         "statusCode": 200,
         "body": json.dumps({

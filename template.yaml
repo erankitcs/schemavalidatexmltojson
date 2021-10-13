@@ -25,6 +25,10 @@ Resources:
         WriteCapacityUnits: 5
   PayloadBucket:
     Type: AWS::S3::Bucket
+  SuccessJSONFilesBucket:
+    Type: AWS::S3::Bucket
+  FailedJSONFilesBucket:
+    Type: AWS::S3::Bucket
   GetXmlFunction:
     Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
     Properties:
@@ -39,16 +43,150 @@ Resources:
           DYNAMODB_TABLE: !Ref RequestsTable
           EVENTBRIDGE: !Ref EventBus
           REGION: "us-east-1"
+      Policies:
+        - EventBridgePutEventsPolicy:
+            EventBusName: !Ref EventBus
+        - S3WritePolicy:
+            BucketName: !Ref PayloadBucket
+        - DynamoDBWritePolicy:
+            TableName: !Ref RequestsTable
       Events:
         GetXml:
           Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
           Properties:
             Path: /xml
             Method: post
+  SchemaValidatorFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: schemavalidator/
+      Handler: app.lambda_handler
+      Runtime: python3.9
+      Architectures:
+        - x86_64
+      Environment:
+        Variables:
+          REGION: "us-east-1"
+          PAYLOAD_BUCKET: !Ref PayloadBucket
+      Policies:
+        - EventBridgePutEventsPolicy:
+            EventBusName: !Ref EventBus
+        - S3ReadPolicy:
+            BucketName: !Ref PayloadBucket
+        - DynamoDBWritePolicy:
+            TableName: !Ref RequestsTable
+  SuccessValidationEventProcessFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: successValidationEventProcess/
+      Handler: app.lambda_handler
+      Runtime: python3.9
+      Architectures:
+        - x86_64
+      Environment:
+        Variables:
+          REGION: "us-east-1"
+          DYNAMODB_TABLE: !Ref RequestsTable
+          VALIDATION_SUCCESS_BUCKET: !Ref SuccessJSONFilesBucket
+          PAYLOAD_BUCKET: !Ref PayloadBucket
+      Policies:
+        - S3WritePolicy:
+            BucketName: !Ref SuccessJSONFilesBucket
+        - S3ReadPolicy:
+            BucketName: !Ref PayloadBucket
+        - DynamoDBWritePolicy:
+            TableName: !Ref RequestsTable
+  FailedValidationEventProcessFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: failedValidationEventProcess/
+      Handler: app.lambda_handler
+      Runtime: python3.9
+      Architectures:
+        - x86_64
+      Environment:
+        Variables:
+          REGION: "us-east-1"
+          DYNAMODB_TABLE: !Ref RequestsTable
+          VALIDATION_FAILED_BUCKET: !Ref JSONFilesBucket
+          PAYLOAD_BUCKET: !Ref PayloadBucket
+      Policies:
+        - S3WritePolicy:
+            BucketName: !Ref FailedJSONFilesBucket
+        - S3ReadPolicy:
+            BucketName: !Ref PayloadBucket
+        - DynamoDBWritePolicy:
+            TableName: !Ref RequestsTable
   EventBus:
     Type: AWS::Events::EventBus
     Properties: 
       Name: "schemavalidator_bus"
+  EventRuleValidator: 
+    Type: AWS::Events::Rule
+    Properties: 
+      Description: "Process XML Schema Validator."
+      EventBusName: !GetAtt EventBus.Arn
+      EventPattern: 
+        source: 
+          - "custom.get_xml_lambda"
+        detail-type:
+          - xmldata   
+      State: "ENABLED"
+      Targets: 
+        - 
+          Arn: !GetAtt SchemaValidatorFunction.Arn
+          Id: "SchemaValidatorFunction"
+  EventRuleValidationSuccess: 
+    Type: AWS::Events::Rule
+    Properties: 
+      Description: "Process Successful Schema Validation ."
+      EventBusName: !GetAtt EventBus.Arn
+      EventPattern: 
+        source: 
+          - "custom.schemavalidator_lambda"
+        detail-type:
+          - success   
+      State: "ENABLED"
+      Targets: 
+        - 
+          Arn: !GetAtt SuccessValidationEventProcessFunction.Arn
+          Id: "SuccessValidationEventProcessFunction"
+  EventRuleValidationFailed: 
+    Type: AWS::Events::Rule
+    Properties: 
+      Description: "Process Failed Schema Validation ."
+      EventBusName: !GetAtt EventBus.Arn
+      EventPattern: 
+        source: 
+          - "custom.schemavalidator_lambda"
+        detail-type:
+          - failed
+      State: "ENABLED"
+      Targets: 
+        - 
+          Arn: !GetAtt FailedValidationEventProcessFunction.Arn
+          Id: "FailedValidationEventProcessFunction"
+  PermissionForEventsToInvokeSchemaValidatorLambda: 
+    Type: AWS::Lambda::Permission
+    Properties: 
+      FunctionName: !Ref SchemaValidatorFunction
+      Action: "lambda:InvokeFunction"
+      Principal: "events.amazonaws.com"
+      SourceArn: !GetAtt EventRuleValidator.Arn
+  PermissionForEventsToInvokeSuccessValidationLambda: 
+    Type: AWS::Lambda::Permission
+    Properties: 
+      FunctionName: !Ref SuccessValidationEventProcessFunction
+      Action: "lambda:InvokeFunction"
+      Principal: "events.amazonaws.com"
+      SourceArn: !GetAtt EventRuleValidationSuccess.Arn
+  PermissionForEventsToInvokeFailedValidationLambda: 
+    Type: AWS::Lambda::Permission
+    Properties: 
+      FunctionName: !Ref FailedValidationEventProcessFunction
+      Action: "lambda:InvokeFunction"
+      Principal: "events.amazonaws.com"
+      SourceArn: !GetAtt EventRuleValidationFailed.Arn
 Outputs:
   # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
   # Find out more about other implicit resources you can reference within SAM
