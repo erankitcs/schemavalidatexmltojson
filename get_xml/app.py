@@ -51,11 +51,16 @@ def lambda_handler(event, context):
     payload_size = sys.getsizeof(payload)/1024
     if payload_size > 250 :
         print("Payload is too large for Eventbridge. Payload size- ", payload_size)
-        upload_payload(payload,reference_id)
+        now = datetime.now()
+        today = str(now)[:14]
+        objKey=today+"/"+reference_id
+        upload_payload(payload,objKey)
         body["data"] = ""
+        body["payloadTrimed"]="yes"
+        body["payloadS3Key"]=objKey
     else:
         print("Good to go for eventbridge directly. Payload size- ", payload_size)
-    
+        body["payloadTrimed"]="no"
     print("Calling Event Bridge with request payload.")
     ### Adding Reference into payload.
     body["reference_id"]=reference_id
