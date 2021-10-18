@@ -56,12 +56,21 @@ Resources:
           Properties:
             Path: /xml
             Method: post
+  SchemaValidatorLayer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      ContentUri: schemaValidatorLayer\lambda_layer.zip
+      Description: "Lambda Layer with xmltodict,jsonschema,traitlets,attrs and pyrsistent packages."
+      CompatibleRuntimes:
+        - python3.9
   SchemaValidatorFunction:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: schemavalidator/
       Handler: app.lambda_handler
       Runtime: python3.9
+      Layers:
+        - !Ref SchemaValidatorLayer
       Architectures:
         - x86_64
       Environment:
