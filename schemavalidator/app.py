@@ -4,12 +4,14 @@ import os
 import xmltodict
 import jsonschema
 from jsonschema import validate
+from datetime import datetime
 
 PAYLOAD_BUCKET = os.getenv('PAYLOAD_BUCKET')
+EVENTBRIDGE = os.getenv('EVENTBRIDGE')
 REGION=os.getenv('REGION')
 
 s3 = boto3.resource('s3', region_name=REGION)
-
+events_client = boto3.client('events')
 def xml_to_json(xmldata):
     xpars = xmltodict.parse(xmldata)
     jsonData = json.dumps(xpars)
@@ -60,9 +62,45 @@ def lambda_handler(event, context):
         payloads3key=detail["payloadS3Key"]
         print(payloads3key)
         payload = get_payload(payloads3key)
-    payload=detail["data"]
+    else:
+        payload=detail["data"]
     jsonpayload=xml_to_json(payload)
+    if detail["payloadTrimed"] == "yes":
+        outputpayload = ""
+    else:
+        outputpayload = jsonpayload
     isValid , msg = validate_json(jsonpayload)
+    print("Calling Event Bridge with request payload.")
+    outputeventpayload={
+        "reference_id": reference_id,
+        "payloadTrimed": detail["payloadTrimed"],
+        "payloadS3Key" : detail["payloadS3Key"],
+        "payload"      : outputpayload
+    }
+    if isValid:
+        event_type = "success"
+    else:
+        event_type = "failed"
+    Entries=[
+        {
+            'Time': datetime.now(),
+            'Source': 'custom.schemavalidator_lambda',
+            'Resources': [
+                'string',
+            ],
+            'DetailType': event_type,
+            'Detail': json.dumps(
+                outputeventpayload
+            ),
+            'EventBusName': EVENTBRIDGE,
+            'TraceHeader': reference_id
+        },
+    ]
+    #print(Entries)
+    response = events_client.put_events(
+    Entries=Entries
+     )
+    print(response)
     return {
         "statusCode": 200,
         "body": json.dumps({

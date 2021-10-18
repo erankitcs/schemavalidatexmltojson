@@ -77,6 +77,7 @@ Resources:
         Variables:
           REGION: "us-east-1"
           PAYLOAD_BUCKET: !Ref PayloadBucket
+          EVENTBRIDGE: !Ref EventBus
       Policies:
         - EventBridgePutEventsPolicy:
             EventBusName: !Ref EventBus
