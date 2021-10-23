@@ -51,8 +51,8 @@ def lambda_handler(event, context):
         payload = get_payload(payloads3key)
         jsonpayload=xml_to_json(payload)
     else:
-        payload=detail["payload"]
-    
+        jsonpayload=detail["payload"]
+    jsonpayload["valid"]=detail["isValid"]
     upload_s3(jsonpayload,reference_id)
     return {
         "statusCode": 200,

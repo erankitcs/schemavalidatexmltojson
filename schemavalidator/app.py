@@ -34,8 +34,8 @@ def validate_json(json_data):
     try:
         validate(instance=json_data, schema=schema)
     except jsonschema.exceptions.ValidationError as err:
-        print(err)
-        err = "Given JSON data is InValid"
+        print(err.message)
+        err = "Given JSON data is InValid. Validation Msg: "+err.message
         return False, err
 
     message = "Given JSON data is Valid"
@@ -75,7 +75,9 @@ def lambda_handler(event, context):
         "reference_id": reference_id,
         "payloadTrimed": detail["payloadTrimed"],
         "payloadS3Key" : detail["payloadS3Key"],
-        "payload"      : outputpayload
+        "payload"      : outputpayload,
+        "validationMsg" : msg,
+        "isValid"       : isValid
     }
     if isValid:
         event_type = "success"

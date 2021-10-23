@@ -1,6 +1,7 @@
 import json
 import boto3
 import os
+import xmltodist
 
 FAILED_BUCKET = os.getenv('VALIDATION_FAILED_BUCKET')
 PAYLOAD_BUCKET = os.getenv('PAYLOAD_BUCKET')
@@ -15,6 +16,17 @@ def upload_s3(data,key):
     print(response)
     return True
 
+def get_payload(key):
+    s3_object = s3.Object(bucket_name=PAYLOAD_BUCKET, key=key)
+    xmlpayload = s3_object.get()['Body'].read()
+    return xmlpayload
+
+def xml_to_json(xmldata):
+    xpars = xmltodict.parse(xmldata)
+    jsonData = json.dumps(xpars)
+    print('json data')
+    print(jsonData)
+    return jsonData
 def lambda_handler(event, context):
     """Lambda function to recieved Failed Json payload and upload it to S3 bucket.
 
@@ -32,8 +44,18 @@ def lambda_handler(event, context):
     detail = json.loads(event["detail"])
     print(detail)
     reference_id=detail["reference_id"]
-    data=detail["data"]
-    upload_s3(data,reference_id)
+    print("checking if payload data is in S3 bucket or in the request.")
+    if detail["payloadTrimed"] == "yes":
+        payloads3key=detail["payloadS3Key"]
+        print(payloads3key)
+        payload = get_payload(payloads3key)
+        jsonpayload=xml_to_json(payload)
+    else:
+        jsonpayload=detail["payload"]
+    print("Adding error msg.")
+    jsonpayload["error"]=detail["validationMsg"]
+    jsonpayload["valid"]=detail["isValid"]
+    upload_s3(jsonpayload,reference_id)
     return {
         "statusCode": 200,
         "body": json.dumps({
