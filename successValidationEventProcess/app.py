@@ -9,7 +9,16 @@ DYNAMODB_TABLE = os.getenv('DYNAMODB_TABLE')
 REGION=os.getenv('REGION')
 
 s3 = boto3.resource('s3', region_name=REGION)
-
+dynamodb = boto3.resource('dynamodb')
+def log_event(id,msg):
+    table = dynamodb.Table('DYNAMODB_TABLE')
+    table.update_item(
+        Key={'id': id},
+        AttributeUpdates={
+        'msg': msg
+        },
+    )
+    return True
 def upload_s3(data,key):
     bucket = s3.Bucket(SUCCESS_BUCKET)
     response = bucket.put_object(Body=data,Key=key)
@@ -54,6 +63,7 @@ def lambda_handler(event, context):
         jsonpayload=detail["payload"]
     jsonpayload["valid"]=detail["isValid"]
     upload_s3(jsonpayload,reference_id)
+    log_event(reference_id,"Converted a valid JSON object is saved into S3 bucket.")
     return {
         "statusCode": 200,
         "body": json.dumps({

@@ -12,6 +12,18 @@ REGION=os.getenv('REGION')
 
 s3 = boto3.resource('s3', region_name=REGION)
 events_client = boto3.client('events')
+dynamodb = boto3.resource('dynamodb')
+def log_event(id,status,msg):
+    table = dynamodb.Table('DYNAMODB_TABLE')
+    table.update_item(
+        Key={'id': id},
+        AttributeUpdates={
+        'status': status,
+        'msg': msg
+        },
+    )
+    return True
+
 def xml_to_json(xmldata):
     xpars = xmltodict.parse(xmldata)
     jsonData = json.dumps(xpars)
@@ -35,10 +47,10 @@ def validate_json(json_data):
         validate(instance=json_data, schema=schema)
     except jsonschema.exceptions.ValidationError as err:
         print(err.message)
-        err = "Given JSON data is InValid. Validation Msg: "+err.message
+        err = "Given JSON data is InValid against Schema. Validation Msg: "+err.message
         return False, err
 
-    message = "Given JSON data is Valid"
+    message = "Given JSON data is Valid against Schema."
     return True, message
 def lambda_handler(event, context):
     """Lambda function to validate passed XML data and do json schema validation from Event Bridge..
@@ -70,6 +82,14 @@ def lambda_handler(event, context):
     else:
         outputpayload = jsonpayload
     isValid , msg = validate_json(jsonpayload)
+    if isValid:
+        event_type = "success"
+        event_status = "validated successfully"
+    else:
+        event_type = "failed"
+        event_status = "validation failed"
+    ## Logging validation status.
+    log_event(reference_id,event_status,msg)
     print("Calling Event Bridge with request payload.")
     outputeventpayload={
         "reference_id": reference_id,
@@ -79,10 +99,6 @@ def lambda_handler(event, context):
         "validationMsg" : msg,
         "isValid"       : isValid
     }
-    if isValid:
-        event_type = "success"
-    else:
-        event_type = "failed"
     Entries=[
         {
             'Time': datetime.now(),

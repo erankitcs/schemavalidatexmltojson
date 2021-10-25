@@ -12,6 +12,15 @@ REGION=os.getenv('REGION')
 
 s3 = boto3.resource('s3', region_name=REGION)
 events_client = boto3.client('events')
+dynamodb = boto3.resource('dynamodb')
+def log_event(id,status,msg):
+    table = dynamodb.Table('DYNAMODB_TABLE')
+    table.put_item(Item={
+            'id': id,
+            'status': status,
+            'msg': msg,
+        })
+    return True
 
 def upload_payload(payload,objkey):
     """
@@ -42,11 +51,14 @@ def lambda_handler(event, context):
         Return doc: https://docs.aws.amazon.com/apigateway/latest/developerguide/set-up-lambda-proxy-integrations.html
     """
     print(event)
+    
     body = json.loads(event["body"])
     client   = body["metadata"]["client"]
     payload  = body["data"]
     uniqueid = str(uuid.uuid4())
     reference_id = uniqueid+"-"+client
+    print("logging event")
+    log_event(reference_id,"recieved","Items has been recieved for processing.")
     print("checking payload size coming from the request.")
     payload_size = sys.getsizeof(payload)/1024
     if payload_size > 250 :

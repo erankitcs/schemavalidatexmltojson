@@ -1,0 +1,32 @@
+{
+	"$schema":"http://json-schema.org/draft-04/schema#",
+	"title": "note",
+	"description": "A Note request json",
+	"type": "string",
+	"properties": {
+		"note": {
+			"type": "object",
+			"properties": {
+				"to": {
+					"description": " Sending to",
+					"type": "string"
+				},
+				"from": {
+					"description": " Sender ",
+					"type": "string"
+				},
+				"heading": {
+					"description": " Subject ",
+					"type": "string"
+				},
+				"body": {
+					"description": " Body ",
+					"type": "string"
+				}
+			},
+			"required": ["to", "from"]
+
+		}
+	},
+	"required": ["note"]
+}
