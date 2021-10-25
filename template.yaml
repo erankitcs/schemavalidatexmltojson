@@ -78,6 +78,7 @@ Resources:
           REGION: "us-east-1"
           PAYLOAD_BUCKET: !Ref PayloadBucket
           EVENTBRIDGE: !Ref EventBus
+          DYNAMODB_TABLE: !Ref RequestsTable
       Policies:
         - EventBridgePutEventsPolicy:
             EventBusName: !Ref EventBus
@@ -118,7 +119,7 @@ Resources:
         Variables:
           REGION: "us-east-1"
           DYNAMODB_TABLE: !Ref RequestsTable
-          VALIDATION_FAILED_BUCKET: !Ref JSONFilesBucket
+          VALIDATION_FAILED_BUCKET: !Ref FailedJSONFilesBucket
           PAYLOAD_BUCKET: !Ref PayloadBucket
       Policies:
         - S3WritePolicy:

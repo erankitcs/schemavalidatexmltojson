@@ -14,7 +14,7 @@ s3 = boto3.resource('s3', region_name=REGION)
 events_client = boto3.client('events')
 dynamodb = boto3.resource('dynamodb')
 def log_event(id,status,msg):
-    table = dynamodb.Table('DYNAMODB_TABLE')
+    table = dynamodb.Table(DYNAMODB_TABLE)
     table.put_item(Item={
             'id': id,
             'status': status,

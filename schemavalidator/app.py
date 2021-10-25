@@ -9,18 +9,25 @@ from datetime import datetime
 PAYLOAD_BUCKET = os.getenv('PAYLOAD_BUCKET')
 EVENTBRIDGE = os.getenv('EVENTBRIDGE')
 REGION=os.getenv('REGION')
-
+DYNAMODB_TABLE = os.getenv('DYNAMODB_TABLE')
 s3 = boto3.resource('s3', region_name=REGION)
 events_client = boto3.client('events')
 dynamodb = boto3.resource('dynamodb')
 def log_event(id,status,msg):
-    table = dynamodb.Table('DYNAMODB_TABLE')
+    table = dynamodb.Table(DYNAMODB_TABLE)
     table.update_item(
-        Key={'id': id},
-        AttributeUpdates={
-        'status': status,
-        'msg': msg
-        },
+        Key={
+                'id': id,
+            },
+        UpdateExpression="set #st = :s , msg= :m",
+        ExpressionAttributeValues={
+                ':s': status,
+                ':m': msg
+            },
+        ExpressionAttributeNames={
+                "#st": "status"
+            },
+        ReturnValues="UPDATED_NEW"
     )
     return True
 
@@ -66,10 +73,11 @@ def lambda_handler(event, context):
     Processing status Output Format: json
     """
     print(event)
-    detail = json.loads(event["detail"])
+    detail = event["detail"]
     print(detail)
     reference_id=detail["reference_id"]
     print("checking if payload data is in S3 bucket or in the request.")
+    payloads3key=""
     if detail["payloadTrimed"] == "yes":
         payloads3key=detail["payloadS3Key"]
         print(payloads3key)
@@ -94,7 +102,7 @@ def lambda_handler(event, context):
     outputeventpayload={
         "reference_id": reference_id,
         "payloadTrimed": detail["payloadTrimed"],
-        "payloadS3Key" : detail["payloadS3Key"],
+        "payloadS3Key" : payloads3key,
         "payload"      : outputpayload,
         "validationMsg" : msg,
         "isValid"       : isValid

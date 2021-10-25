@@ -11,7 +11,7 @@ REGION=os.getenv('REGION')
 s3 = boto3.resource('s3', region_name=REGION)
 dynamodb = boto3.resource('dynamodb')
 def log_event(id,msg):
-    table = dynamodb.Table('DYNAMODB_TABLE')
+    table = dynamodb.Table(DYNAMODB_TABLE)
     table.update_item(
         Key={'id': id},
         AttributeUpdates={
