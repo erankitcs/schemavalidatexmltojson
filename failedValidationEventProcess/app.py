@@ -11,18 +11,26 @@ REGION=os.getenv('REGION')
 s3 = boto3.resource('s3', region_name=REGION)
 
 dynamodb = boto3.resource('dynamodb')
-def log_event(id,msg):
+def log_event(id,status,msg):
     table = dynamodb.Table(DYNAMODB_TABLE)
     table.update_item(
-        Key={'id': id},
-        AttributeUpdates={
-        'msg': msg
-        },
+        Key={
+                'id': id,
+            },
+        UpdateExpression="set #st = :s , msg= :m",
+        ExpressionAttributeValues={
+                ':s': status,
+                ':m': msg
+            },
+        ExpressionAttributeNames={
+                "#st": "status"
+            },
+        ReturnValues="UPDATED_NEW"
     )
     return True
 def upload_s3(data,key):
     bucket = s3.Bucket(FAILED_BUCKET)
-    response = bucket.put_object(Body=data,Key=key)
+    response = bucket.put_object(Body=json.dumps(data),Key=key)
     print(response)
     return True
 
@@ -51,22 +59,23 @@ def lambda_handler(event, context):
     Upload Status Output Format: json
     """
     print(event)
-    detail = json.loads(event["detail"])
+    detail = event["detail"]
     print(detail)
     reference_id=detail["reference_id"]
+    jsonpayload={}
     print("checking if payload data is in S3 bucket or in the request.")
     if detail["payloadTrimed"] == "yes":
         payloads3key=detail["payloadS3Key"]
         print(payloads3key)
         payload = get_payload(payloads3key)
-        jsonpayload=xml_to_json(payload)
+        jsonpayload["payload"]=xml_to_json(payload)
     else:
         jsonpayload=detail["payload"]
     print("Adding error msg.")
     jsonpayload["error"]=detail["validationMsg"]
-    jsonpayload["valid"]=detail["isValid"]
+    jsonpayload["isValid"]=detail["isValid"]
     upload_s3(jsonpayload,reference_id)
-    log_event(reference_id,"Converted a Invalid JSON object is saved into S3 bucket.")
+    log_event(reference_id,"Invalid and Loaded","Converted JSON object is saved into S3 bucket.")
     return {
         "statusCode": 200,
         "body": json.dumps({

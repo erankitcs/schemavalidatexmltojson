@@ -61,7 +61,7 @@ def lambda_handler(event, context):
     log_event(reference_id,"recieved","Items has been recieved for processing.")
     print("checking payload size coming from the request.")
     payload_size = sys.getsizeof(payload)/1024
-    if payload_size > 250 :
+    if payload_size > 100 :
         print("Payload is too large for Eventbridge. Payload size- ", payload_size)
         now = datetime.now()
         today = str(now)[:14]

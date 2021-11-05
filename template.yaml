@@ -56,6 +56,27 @@ Resources:
           Properties:
             Path: /xml
             Method: post
+  XmlStatusFunction:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Properties:
+      CodeUri: xmlStatus/
+      Handler: app.lambda_handler
+      Runtime: python3.9
+      Architectures:
+        - x86_64
+      Environment:
+        Variables:
+          DYNAMODB_TABLE: !Ref RequestsTable
+          REGION: "us-east-1"
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref RequestsTable
+      Events:
+        XmlStatus:
+          Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
+          Properties:
+            Path: /xmlstatus
+            Method: post
   SchemaValidatorLayer:
     Type: AWS::Serverless::LayerVersion
     Properties:
@@ -94,6 +115,8 @@ Resources:
       Runtime: python3.9
       Architectures:
         - x86_64
+      Layers:
+        - !Ref SchemaValidatorLayer
       Environment:
         Variables:
           REGION: "us-east-1"
@@ -115,6 +138,8 @@ Resources:
       Runtime: python3.9
       Architectures:
         - x86_64
+      Layers:
+        - !Ref SchemaValidatorLayer
       Environment:
         Variables:
           REGION: "us-east-1"
@@ -205,9 +230,6 @@ Outputs:
   GetXmlApi:
     Description: "API Gateway endpoint URL for Prod stage for GetXml function"
     Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/xml/"
-  GetXmlFunction:
-    Description: "Get XML Lambda Function ARN"
-    Value: !GetAtt GetXmlFunction.Arn
-  GetXmlFunctionIamRole:
-    Description: "Implicit IAM Role created for Get XML function"
-    Value: !GetAtt GetXmlFunction.Arn
+  XmlStatusApi:
+    Description: "API Gateway endpoint URL for Prod stage for XxmlStatus function"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/xmlstatus/"
