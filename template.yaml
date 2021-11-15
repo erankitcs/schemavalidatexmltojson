@@ -27,6 +27,21 @@ Resources:
     Type: AWS::S3::Bucket
   SuccessJSONFilesBucket:
     Type: AWS::S3::Bucket
+  SuccessJSONS3AccessPoint:
+    Type: AWS::S3::AccessPoint
+    Properties:
+      Bucket: !Ref SuccessJSONFilesBucket
+      Name: "ValideJson"
+      Policy:
+        Version: 2012-10-17
+        Statement:
+          - Action:
+              - 's3:GetObject'
+            Effect: Allow
+            Resource:
+              - !Sub 'arn:${AWS::Partition}:s3:${AWS::Region}:${AWS::AccountId}:accesspoint/ValideJson/object/*'
+            Principal:
+              AWS: !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:user/*'
   FailedJSONFilesBucket:
     Type: AWS::S3::Bucket
   GetXmlFunction:
@@ -223,6 +238,16 @@ Resources:
       Action: "lambda:InvokeFunction"
       Principal: "events.amazonaws.com"
       SourceArn: !GetAtt EventRuleValidationFailed.Arn
+  JsonPiiRedaction:
+    Type: AWS::Serverless::Application
+    Properties:
+      Location:
+        ApplicationId: 'rn:aws:serverlessrepo:us-east-1:012345678901:applications/my-application'
+        SemanticVersion: 1.0.0
+      Parameters:
+        PII_ENTITY_TYPES: ALL
+        MASK_MODE: MASK
+        MASK_CHARACTER: '*'
 Outputs:
   # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
   # Find out more about other implicit resources you can reference within SAM
