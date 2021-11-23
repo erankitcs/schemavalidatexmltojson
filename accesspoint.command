@@ -1,0 +1,1 @@
+aws s3api get-object --key <S3Key> --bucket <AccessPointArn/LamndaAccessPointARN> test.json

@@ -25,29 +25,39 @@ Resources:
         WriteCapacityUnits: 5
   PayloadBucket:
     Type: AWS::S3::Bucket
+    Properties:
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: True
+        BlockPublicPolicy: True
+        IgnorePublicAcls: True
+        RestrictPublicBuckets: True
+
   SuccessJSONFilesBucket:
     Type: AWS::S3::Bucket
+    Properties:
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: True
+        BlockPublicPolicy: True
+        IgnorePublicAcls: True
+        RestrictPublicBuckets: True
+
   SuccessJSONS3AccessPoint:
     Type: AWS::S3::AccessPoint
     Properties:
       Bucket: !Ref SuccessJSONFilesBucket
-      Name: "ValideJson"
-      Policy:
-        Version: 2012-10-17
-        Statement:
-          - Action:
-              - 's3:GetObject'
-            Effect: Allow
-            Resource:
-              - !Sub 'arn:${AWS::Partition}:s3:${AWS::Region}:${AWS::AccountId}:accesspoint/ValideJson/object/*'
-            Principal:
-              AWS: !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:user/*'
+      Name: valide-jsons
   FailedJSONFilesBucket:
     Type: AWS::S3::Bucket
-  GetXmlFunction:
+    Properties:
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: True
+        BlockPublicPolicy: True
+        IgnorePublicAcls: True
+        RestrictPublicBuckets: True
+  PutXmlFunction:
     Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
     Properties:
-      CodeUri: get_xml/
+      CodeUri: putXml/
       Handler: app.lambda_handler
       Runtime: python3.9
       Architectures:
@@ -69,7 +79,7 @@ Resources:
         GetXml:
           Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
           Properties:
-            Path: /xml
+            Path: /putxml
             Method: post
   XmlStatusFunction:
     Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
@@ -238,23 +248,114 @@ Resources:
       Action: "lambda:InvokeFunction"
       Principal: "events.amazonaws.com"
       SourceArn: !GetAtt EventRuleValidationFailed.Arn
-  JsonPiiRedaction:
+  ComprehendPiiRedactionS3ObjectLambda:
     Type: AWS::Serverless::Application
     Properties:
       Location:
-        ApplicationId: 'rn:aws:serverlessrepo:us-east-1:012345678901:applications/my-application'
-        SemanticVersion: 1.0.0
-      Parameters:
-        PII_ENTITY_TYPES: ALL
-        MASK_MODE: MASK
-        MASK_CHARACTER: '*'
+        ApplicationId: 'arn:aws:serverlessrepo:us-east-1:839782855223:applications/ComprehendPiiRedactionS3ObjectLambda'
+        SemanticVersion: 1.0.2
+      Parameters: 
+        
+        # The minimum prediction confidence score above which PII classification and detection would be considered as final answer. Valid range (0.5 to 1.0).
+        # ConfidenceThreshold: '0.5' # Uncomment to override default value
+        # Number of threads to use for calling Comprehend's ContainsPiiEntities API. This controls the number of simultaneous calls that will be made from this Lambda.
+        # ContainsPiiEntitiesThreadCount: '20' # Uncomment to override default value
+        # Default language of the text to be processed. This code will be used for interacting with Comprehend.
+        # DefaultLanguageCode: 'en' # Uncomment to override default value
+        # Number of threads to use for calling Comprehend's DetectPiiEntities API. This controls the number of simultaneous calls that will be made from this Lambda.
+        # DetectPiiEntitiesThreadCount: '8' # Uncomment to override default value
+        # Default maximum document size (in bytes) that this function can process otherwise will throw exception for too large document size.
+        DocumentMaxSize: '202400' # Uncomment to override default value
+        # Maximum document size (in bytes) to be used for making calls to Comprehend's ContainsPiiEntities API.
+        # DocumentMaxSizeContainsPiiEntities: '50000' # Uncomment to override default value
+        # Maximum document size (in bytes) to be used for making calls to Comprehend's DetectPiiEntities API.
+        # DocumentMaxSizeDetectPiiEntities: '5000' # Uncomment to override default value
+        # Whether to support partial objects or not. Accessing partial object through http headers such byte-range can corrupt the object and/or affect PII detection accuracy.
+        # IsPartialObjectSupported: 'false' # Uncomment to override default value
+        # Log level for Lambda function logging, e.g., ERROR, INFO, DEBUG, etc.
+        # LogLevel: 'INFO' # Uncomment to override default value
+        # A character that replaces each character in the redacted PII entity.
+        MaskCharacter: '*' # Uncomment to override default value
+        # Specifies whether the PII entity is redacted with the mask character or the entity type. Valid values - REPLACE_WITH_PII_ENTITY_TYPE and MASK.
+        MaskMode: 'MASK' # Uncomment to override default value
+        # Maximum characters to overlap among segments of a document in case chunking is needed because of maximum document size limit.
+        # MaxCharsOverlap: '200' # Uncomment to override default value
+        # List of comma separated PII entity types to be considered for redaction. Refer Comprehend's documentation page for list of supported PII entity types.
+        PiiEntityTypes: 'ALL' # Uncomment to override default value
+        # True if publish metrics to Cloudwatch, false otherwise. See README.md for details on CloudWatch metrics.
+        # PublishCloudWatchMetrics: 'true' # Uncomment to override default value
+        # Number of tokens/words to overlap among segments of a document in case chunking is needed because of maximum document size limit.
+        # SubsegmentOverlappingTokens: '20' # Uncomment to override default value
+        # Handling logic for Unsupported files. Valid values are PASS and FAIL.
+        # UnsupportedFileHandling: 'FAIL' # Uncomment to override default value
+  ValidJsonLambdaAccessPoint:
+    Type: AWS::S3ObjectLambda::AccessPoint
+    Properties: 
+       Name: valid-json-redaction
+       ObjectLambdaConfiguration: 
+          SupportingAccessPoint: !Sub 'arn:aws:s3:${AWS::Region}:${AWS::AccountId}:accesspoint/${SuccessJSONS3AccessPoint}'
+          TransformationConfigurations: 
+          - Actions: 
+              - GetObject
+            ContentTransformation: 
+              AwsLambda:
+                FunctionArn: !Sub 'arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${ComprehendPiiRedactionS3ObjectLambda.Outputs.PiiRedactionFunctionName}'
+  JsonPIIRedacted:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: getJsonPIIRedacted/
+      Handler: app.lambda_handler
+      Runtime: python3.9
+      Architectures:
+        - x86_64
+      Environment:
+        Variables:
+          REGION: "us-east-1"
+          OBJECTLAMBDAS3ARN: !GetAtt ValidJsonLambdaAccessPoint.Arn
+      Policies:
+      - Statement:
+          - Sid: ObjectLambdaAccess
+            Effect: Allow
+            Action:
+            - 's3-object-lambda:Get*'
+            - 's3-object-lambda:List*'
+            Resource: !GetAtt ValidJsonLambdaAccessPoint.Arn
+          - Sid: AllowStandardAccessPointAccess
+            Effect: Allow
+            Action:
+            - 's3:Get*'
+            - 's3:List*'
+            Resource: !Sub '${SuccessJSONS3AccessPoint.Arn}/*'
+            Condition:
+              ForAnyValue:StringEquals:
+                aws:CalledVia: "s3-object-lambda.amazonaws.com"
+          - Sid: AllowLambdaInvocation
+            Effect: Allow
+            Action:
+            - 'lambda:InvokeFunction'
+            Resource: "*"                       
+      Events:
+        XmlStatus:
+          Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
+          Properties:
+            Path: /getredacteddata
+            Method: post
 Outputs:
   # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
   # Find out more about other implicit resources you can reference within SAM
   # https://github.com/awslabs/serverless-application-model/blob/master/docs/internals/generated_resources.rst#api
   GetXmlApi:
     Description: "API Gateway endpoint URL for Prod stage for GetXml function"
-    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/xml/"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/putXml/"
   XmlStatusApi:
-    Description: "API Gateway endpoint URL for Prod stage for XxmlStatus function"
+    Description: "API Gateway endpoint URL for Prod stage for XmlStatus function"
     Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/xmlstatus/"
+  JsonPIIRedactedApi:
+    Description: "API Gateway endpoint URL for Prod stage for XmlStatus function"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/getredacteddata/"
+  ValidJsonAccessPointARN:
+    Value:
+      Fn::GetAtt:
+      - SuccessJSONS3AccessPoint
+      - Arn
+    Description: ARN of the Valided JSONs Amazon S3 access point.
