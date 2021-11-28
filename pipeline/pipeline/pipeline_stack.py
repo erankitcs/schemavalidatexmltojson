@@ -37,7 +37,7 @@ class PipelineStack(cdk.Stack):
             actions=[
                 codepipeline_actions.CodeCommitSourceAction(
                     action_name="Source",
-                    branch="main",
+                    branch="master",
                     output=source_output,
                     repository=code_repo
                 )
@@ -66,5 +66,25 @@ class PipelineStack(cdk.Stack):
                     input=source_output,
                     outputs=[build_output],
                 )
+            ]
+        )
+        ## Adding deploy stage.
+        pipeline.add_stage(
+            stage_name='Dev',
+            actions=[
+                codepipeline_actions.CloudFormationCreateReplaceChangeSetAction(
+                    action_name='CreateChangeSet',
+                    template_path=codepipeline.ArtifactPath(build_output,"packaged.yaml"),
+                    stack_name='sam-app',
+                    admin_permissions = True,
+                    change_set_name = "sam-app-dev-changeset",
+                    run_order = 1,
+                ),
+                codepipeline_actions.CloudFormationExecuteChangeSetAction(
+                    action_name = "Deploy",
+                    stack_name = "sam-app",
+                    change_set_name = "sam-app-dev-changeset",
+                    run_order = 2,       
+                ),         
             ]
         )
