@@ -105,7 +105,7 @@ Resources:
   SchemaValidatorLayer:
     Type: AWS::Serverless::LayerVersion
     Properties:
-      ContentUri: schemaValidatorLayer\lambda_layer.zip
+      ContentUri: schemaValidatorLayer/lambda_layer.zip
       Description: "Lambda Layer with xmltodict,jsonschema,traitlets,attrs and pyrsistent packages."
       CompatibleRuntimes:
         - python3.9
