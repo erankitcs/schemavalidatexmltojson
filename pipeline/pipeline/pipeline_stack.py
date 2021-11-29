@@ -68,7 +68,7 @@ class PipelineStack(cdk.Stack):
                 )
             ]
         )
-        ## Adding deploy stage.
+        ## Adding deploy stage to Dev.
         pipeline.add_stage(
             stage_name='Dev',
             actions=[
@@ -78,9 +78,10 @@ class PipelineStack(cdk.Stack):
                     stack_name='sam-app',
                     admin_permissions = True,
                     change_set_name = "sam-app-dev-changeset",
+                    cfn_capabilities = [cdk.CfnCapabilities.AUTO_EXPAND, cdk.CfnCapabilities.NAMED_IAM],
                     run_order = 1,
                 ),
-                codepipeline_actions.CloudFormationExecuteChangeSetAction(
+                codepipeline_actions.CloudFormationExecuteChangeSetAction  (
                     action_name = "Deploy",
                     stack_name = "sam-app",
                     change_set_name = "sam-app-dev-changeset",
