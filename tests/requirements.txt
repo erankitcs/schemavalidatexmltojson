@@ -1,3 +1,6 @@
+moto
+coverage
+pylint
 pytest
-pytest-mock
 boto3
+mock
