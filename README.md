@@ -98,6 +98,7 @@ Cloud Development Kit with Python for creating CI/CD pipeline for our SAM Projec
 - requirements-dev.txt - python packaged for CDK testing.
 ### Testing 
 ```bash
+schemavalidatexmltojson/pipeline$ source .venv/bin/activate
 schemavalidatexmltojson/pipeline$ pytest
 ```
 
