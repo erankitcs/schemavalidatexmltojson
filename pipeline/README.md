@@ -7,7 +7,7 @@
 aws codecommit create-repository --repository-name schemavalidatexmltojson
 ```
 
-This is a blank project for Python development with CDK.
+This is a CI/CD project based Python development with CDK for SAM Application (schemavalidatexmltojson)
 
 The `cdk.json` file tells the CDK Toolkit how to execute your app.
 
@@ -48,10 +48,6 @@ At this point you can now synthesize the CloudFormation template for this code.
 ```
 $ cdk synth
 ```
-
-To add additional dependencies, for example other CDK libraries, just add
-them to your `setup.py` file and rerun the `pip install -r requirements.txt`
-command.
 
 ## Useful commands
 
