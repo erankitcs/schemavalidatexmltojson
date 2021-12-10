@@ -2,7 +2,8 @@
 	"$schema":"http://json-schema.org/draft-04/schema#",
 	"title": "note",
 	"description": "A Note request json",
-	"type": "string",
+	"type": "object",
+    "additionalProperties": False,
 	"properties": {
 		"note": {
 			"type": "object",

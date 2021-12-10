@@ -1,6 +1,7 @@
 import json
 import boto3
 import os
+import pytest
 import xmltodict
 import jsonschema
 from jsonschema import validate
@@ -49,14 +50,21 @@ def get_schema():
     return schema
 def validate_json(json_data):
     ## Getting Schema to validate
+    print(json_data)
     schema = get_schema()
+    print(schema)
+    print('Starting validate')
     try:
-        validate(instance=json_data, schema=schema)
+        res = validate(instance=json.loads(json_data), schema=schema)
+        print(res)
     except jsonschema.exceptions.ValidationError as err:
         print(err.message)
         err = "Given JSON data is InValid against Schema. Validation Msg: "+err.message
         return False, err
-
+    except jsonschema.exceptions.SchemaError as err:
+        print(err.message)
+        err = "Given JSON Schema is InValid. Schema Err Msg: "+err.message
+        return False, err
     message = "Given JSON data is Valid against Schema."
     return True, message
 def lambda_handler(event, context):

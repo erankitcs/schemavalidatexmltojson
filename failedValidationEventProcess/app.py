@@ -1,7 +1,7 @@
 import json
 import boto3
 import os
-import xmltodist
+import xmltodict
 
 FAILED_BUCKET = os.getenv('VALIDATION_FAILED_BUCKET')
 PAYLOAD_BUCKET = os.getenv('PAYLOAD_BUCKET')
@@ -70,7 +70,7 @@ def lambda_handler(event, context):
         payload = get_payload(payloads3key)
         jsonpayload["payload"]=xml_to_json(payload)
     else:
-        jsonpayload=detail["payload"]
+        jsonpayload["payload"]=detail["payload"]
     print("Adding error msg.")
     jsonpayload["error"]=detail["validationMsg"]
     jsonpayload["isValid"]=detail["isValid"]

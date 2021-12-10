@@ -4,3 +4,5 @@ pylint
 pytest
 boto3
 mock
+xmltodict
+jsonschema
