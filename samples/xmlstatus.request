@@ -1,0 +1,5 @@
+curl --location --request POST 'https://wl9ubu8s13.execute-api.us-east-1.amazonaws.com/Prod/xmlstatus/' \
+--header 'Content-Type: text/plain' \
+--data-raw '{
+    "reference_id": "0aad0b44-5466-499e-907f-059bb6d7492a-Ankit"
+}'

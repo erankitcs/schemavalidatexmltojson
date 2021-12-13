@@ -50,8 +50,6 @@ def lambda_handler(event, context):
 
         Return doc: https://docs.aws.amazon.com/apigateway/latest/developerguide/set-up-lambda-proxy-integrations.html
     """
-    print(event)
-    
     body = json.loads(event["body"])
     client   = body["metadata"]["client"]
     payload  = body["data"]
@@ -91,7 +89,6 @@ def lambda_handler(event, context):
             'TraceHeader': reference_id
         },
     ]
-    print(Entries)
     response = events_client.put_events(
     Entries=Entries
      )

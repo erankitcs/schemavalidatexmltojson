@@ -1,7 +1,6 @@
 import json
 import boto3
 import os
-import pytest
 import xmltodict
 import jsonschema
 from jsonschema import validate
@@ -35,8 +34,6 @@ def log_event(id,status,msg):
 def xml_to_json(xmldata):
     xpars = xmltodict.parse(xmldata)
     jsonData = json.dumps(xpars)
-    print('json data')
-    print(jsonData)
     return jsonData
 def get_payload(key):
     s3_object = s3.Object(bucket_name=PAYLOAD_BUCKET, key=key)
@@ -50,13 +47,10 @@ def get_schema():
     return schema
 def validate_json(json_data):
     ## Getting Schema to validate
-    print(json_data)
     schema = get_schema()
-    print(schema)
     print('Starting validate')
     try:
-        res = validate(instance=json.loads(json_data), schema=schema)
-        print(res)
+        validate(instance=json.loads(json_data), schema=schema)
     except jsonschema.exceptions.ValidationError as err:
         print(err.message)
         err = "Given JSON data is InValid against Schema. Validation Msg: "+err.message
@@ -80,15 +74,12 @@ def lambda_handler(event, context):
     ------
     Processing status Output Format: json
     """
-    print(event)
     detail = event["detail"]
-    print(detail)
     reference_id=detail["reference_id"]
     print("checking if payload data is in S3 bucket or in the request.")
     payloads3key=""
     if detail["payloadTrimed"] == "yes":
         payloads3key=detail["payloadS3Key"]
-        print(payloads3key)
         payload = get_payload(payloads3key)
     else:
         payload=detail["data"]

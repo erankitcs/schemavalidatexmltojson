@@ -40,8 +40,6 @@ def get_payload(key):
 def xml_to_json(xmldata):
     xpars = xmltodict.parse(xmldata)
     jsonData = json.dumps(xpars)
-    print('json data')
-    print(jsonData)
     return jsonData
 
 def lambda_handler(event, context):
@@ -57,20 +55,16 @@ def lambda_handler(event, context):
     ------
     Upload Status Output Format: json
     """
-    print(event)
     detail = event["detail"]
-    print(detail)
     reference_id=detail["reference_id"]
     print("checking if payload data is in S3 bucket or in the request.")
     jsonpayload={}
     if detail["payloadTrimed"] == "yes":
         payloads3key=detail["payloadS3Key"]
-        print(payloads3key)
         payload = get_payload(payloads3key)
         jsonpayload["payload"]=xml_to_json(payload)
     else:
         jsonpayload["payload"]=detail["payload"]
-    print(jsonpayload)
     jsonpayload["isvalid"]=detail["isValid"]
     upload_s3(jsonpayload,reference_id)
     log_event(reference_id,"valid and loaded","Converted JSON object is saved into S3 bucket.")

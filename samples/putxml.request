@@ -1,0 +1,8 @@
+curl --location --request POST 'https://wl9ubu8s13.execute-api.us-east-1.amazonaws.com/Prod/putxml' \
+--header 'Content-Type: text/plain' \
+--data-raw '{
+    "metadata": {
+        "client": "Ankit"
+    },
+    "data": "<note><to>Tove</to><from>Jani</from><heading>Reminder</heading><body>Dont forget me this weekend! er.ankit.cs@gmail.com</body></note>"
+}'

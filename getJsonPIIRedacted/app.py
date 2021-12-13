@@ -33,7 +33,6 @@ def lambda_handler(event, context):
 
         Return doc: https://docs.aws.amazon.com/apigateway/latest/developerguide/set-up-lambda-proxy-integrations.html
     """
-    print(event)
     body = json.loads(event["body"])
     reference_id   = body["reference_id"]
     data,status=get_json(reference_id)
