@@ -49,7 +49,7 @@ At this point you can now synthesize the CloudFormation template for this code.
 $ cdk synth
 ```
 
-## Useful commands
+## commands to test, build and deploy
 
  * `cdk ls`          list all stacks in the app
  * `cdk synth`       emits the synthesized CloudFormation template
@@ -57,4 +57,15 @@ $ cdk synth
  * `cdk diff`        compare deployed stack with current state
  * `cdk docs`        open CDK documentation
 
-Enjoy!
+## Start the Pipeline
+* Get Code Commit credentials from IAM.
+* From root folder of the project, Setup code commit by running git add remote command.
+```bash
+git remote add cmrepo <REPO URL>
+```
+* Push changes to AWS Code Commit using below commands.
+```bash
+git add .
+git commit -m "Some comment here"
+git push cmrepo master
+```

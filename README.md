@@ -13,27 +13,38 @@ This project contains source code and supporting files for schemavalidatexmltojs
 - template.yaml - A template that defines the application's AWS resources.
 - buildspec.yaml - A template that defines build steps in CI/CD pipeline.
 - pipeline - A cdk backed CI/CD pipeline for schemavalidatexmltojson application.
+- install.bat - A quick Windows cmd script to run test and deploy SAM.
 
 
 ## Deploy the schemavalidatexmltojson application
-
-The Serverless Application Model Command Line Interface (SAM CLI) is an extension of the AWS CLI that adds functionality for building and testing Lambda applications. It uses Docker to run your functions in an Amazon Linux environment that matches Lambda. It can also emulate your application's build environment and API.
-
 To use the SAM CLI, you need the following tools.
-
 * SAM CLI - [Install the SAM CLI](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-sam-cli-install.html)
 * [Python 3 installed](https://www.python.org/downloads/)
 * Docker - [Install Docker community edition](https://hub.docker.com/search/?type=edition&offering=community)
+* Create Virtual Env.
+```bash
+python -m venv .venv
 
+```
+## Deploy using SAM Template directly using Windows CMD Script.
+* Run `install.bat` to test, build and Deploy SAM Templates.
+
+## Deploy SAM Template directly via CI/CD Pipeline
+* Go to [pipeline/README.md](pipeline/README.md) and follow the instruction.
+
+## Architecture
+
+
+## Sample API Requests/Response
+
+## More Readings.
 To build and deploy your application for the first time, run the following in your shell:
 
 ```bash
-sam build --use-container
+sam build
 sam deploy --guided
 ```
-
 The first command will build the source of your application. The second command will package and deploy your application to AWS, with a series of prompts:
-
 * **Stack Name**: The name of the stack to deploy to CloudFormation. This should be unique to your account and region, and a good starting point would be something matching your project name.
 * **AWS Region**: The AWS region you want to deploy your app to.
 * **Confirm changes before deploy**: If set to yes, any change sets will be shown to you before execution for manual review. If set to no, the AWS SAM CLI will automatically deploy application changes.
@@ -44,10 +55,10 @@ You can find your API Gateway Endpoint URL in the output values displayed after 
 
 ## Use the SAM CLI to build and test locally
 
-Build your application with the `sam build --use-container` command.
+Build your application with the `sam build` command.
 
 ```bash
-schemavalidatexmltojson$ sam build --use-container
+schemavalidatexmltojson$ sam build
 ```
 
 The SAM CLI installs dependencies defined in `<lambdafunction_folder>/requirements.txt`, creates a deployment package, and saves it in the `.aws-sam/build` folder.
@@ -74,6 +85,12 @@ To simplify troubleshooting, SAM CLI has a command called `sam logs`. `sam logs`
 
 ```bash
 schemavalidatexmltojson$ sam logs -n xmlStatus --stack-name schemavalidatexmltojson --tail
+```
+## Deploy 
+Deploy your application with the `sam deploy` command.
+
+```bash
+schemavalidatexmltojson$ sam deploy
 ```
 ## Tests
 
