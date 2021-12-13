@@ -3,7 +3,7 @@
 	"title": "note",
 	"description": "A Note request json",
 	"type": "object",
-    "additionalProperties": False,
+    "additionalProperties": false,
 	"properties": {
 		"note": {
 			"type": "object",
