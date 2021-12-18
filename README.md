@@ -47,10 +47,13 @@ python -m venv .venv
 ## Deploy SAM Template directly via CI/CD Pipeline
 * Go to [pipeline/README.md](pipeline/README.md) and follow the instruction.
 
-## Architecture
-
-
 ## Sample API Requests/Response
+![alt putXML Screenshot](diagrams/getxml.JPG)
+
+![alt xmlstatus Screenshot](diagrams/xmlstatus.JPG)
+
+![alt getpiiredactedjson Screenshot](diagrams/getpiiredactedjson.JPG)
+
 
 ## More Readings.
 To build and deploy your application for the first time, run the following in your shell:
@@ -156,3 +159,4 @@ To delete CDK based Pipeline
 schemavalidatexmltojson/pipeline$ cdk destroy
 schemavalidatexmltojson/pipeline$ aws codecommit delete-repository --repository-name schemavalidatexmltojson
 ```
+
