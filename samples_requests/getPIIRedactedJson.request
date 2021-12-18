@@ -1,0 +1,5 @@
+curl --location --request POST 'https://wl9ubu8s13.execute-api.us-east-1.amazonaws.com/Prod/getredacteddata' \
+--header 'Content-Type: text/plain' \
+--data-raw '{
+    "reference_id": "76c280d4-8a1a-49ab-b086-93e2251c5a94-Ankit"
+}'
