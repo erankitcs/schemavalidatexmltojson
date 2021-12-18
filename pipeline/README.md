@@ -37,10 +37,11 @@ If you are a Windows platform, you would activate the virtualenv like this:
 % .venv\Scripts\activate.bat
 ```
 
-Once the virtualenv is activated, you can install the required dependencies.
+Once the virtualenv is activated, you can install the required dependencies including tests.
 
 ```
 $ pip install -r requirements.txt
+$ pip install -r requirements-dev.txt
 ```
 
 At this point you can now synthesize the CloudFormation template for this code.
@@ -53,6 +54,7 @@ $ cdk synth
 
  * `cdk ls`          list all stacks in the app
  * `cdk synth`       emits the synthesized CloudFormation template
+ * `pytest`          Testing of stack locally before deployment
  * `cdk deploy`      deploy this stack to your default AWS account/region
  * `cdk diff`        compare deployed stack with current state
  * `cdk docs`        open CDK documentation

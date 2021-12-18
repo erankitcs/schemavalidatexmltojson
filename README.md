@@ -1,6 +1,21 @@
 # schemavalidatexmltojson
+This project is a serverless based schema validation, xml to json conversion and finally publishes the json data to consumers along with PII Redaction.
 
-This project contains source code and supporting files for schemavalidatexmltojson application that you can deploy with the SAM CLI. It includes the following files and folders.
+1. Application accept a xml payload via API Gateway, the request will be processed by AWS Lambda function. If payload is very large XML(more than 1 mb), then payload will be stored in a S3 bucket. Request will be logged into AWS DynamoDB. Lambda function will farward this request AWS EventBridge for further processing and retruns back a Reference ID to caller.
+2. Schema Validation lambda function will be called via EventBridge and it will convert XML payload(if large payload then first copy xml from S3 bucket) into JSON and validate the JSON against predefined Schema. Lambda will update the status into DynamoDB and finally publishes result to EventBridge.
+3. Based on the validation status, a lambda function will be called and it will push converted JSON into respective S3 bucket and update request status into DynamoDB.
+4. Meanwhile, caller can another API(xmlstatus) with Reference ID to check the status of the request. Lambda function will query into DynamoDB table and return back the status.
+5. Once a valid JSON is ready, a consumer can call another API(getJsonPIIRedacted) backed by lambda function which will further call S3 Object Lambda Access Point which is backed by "ComprehendPiiRedactionS3ObjectLambda" function from Lambda Application Repository. This will ensure that JSON object from S3 bucket is PII Redacted before returned to consumers.
+
+# Technology
+- We have used AWS SAM (Serverless Appplication Model) to create infrastructure of this project. We have Python SDK to build lambda functions. Unit Testing will be performed locally using moto library to mock AWS Services.
+- We have create CI/CD Pipeline for this project using AWS CDK in Python Language. There is local unit testing for CDK as well before deploying the pipeline to AWS Cloud.
+
+## Architecture
+
+![alt Schemavalidatexmltojson Architecture](diagrams/arch_diagram.jpg)
+
+The project contains source code and supporting files for schemavalidatexmltojson application that you can deploy with the SAM CLI. It includes the following files and folders.
 
 - putXml - Code for Submit XML payload for validation and conversion.
 - xmlStatus - Code for checking status XML payload submitted for validation.
@@ -86,12 +101,6 @@ To simplify troubleshooting, SAM CLI has a command called `sam logs`. `sam logs`
 ```bash
 schemavalidatexmltojson$ sam logs -n xmlStatus --stack-name schemavalidatexmltojson --tail
 ```
-## Deploy 
-Deploy your application with the `sam deploy` command.
-
-```bash
-schemavalidatexmltojson$ sam deploy
-```
 ## Tests
 
 Tests are defined in the `tests` folder in this project. Use PIP to install the test dependencies and run tests.
@@ -100,10 +109,15 @@ Tests are defined in the `tests` folder in this project. Use PIP to install the 
 schemavalidatexmltojson$ pip install -r tests/requirements.txt --user
 # unit test
 schemavalidatexmltojson$ coverage run -m pytest tests\unit
-# integration test, requiring deploying the stack first.
-# Create the env variable AWS_SAM_STACK_NAME with the name of the stack we are testing
-schemavalidatexmltojson$ AWS_SAM_STACK_NAME=schemavalidatexmltojson python -m pytest tests/integration -v
 ```
+
+## Deploy 
+Deploy your application with the `sam deploy` command.
+
+```bash
+schemavalidatexmltojson$ sam deploy
+```
+
 
 ## CI/CD using CDK
 Cloud Development Kit with Python for creating CI/CD pipeline for our SAM Project.
